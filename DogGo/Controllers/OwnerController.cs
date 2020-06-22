@@ -8,21 +8,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using DogGo.Models;
 using DogGo.Repositories;
-
+using DogGo.Models.ViewModels;
 
 namespace DogGo.Controllers
 {
     public class OwnerController : Controller
     {
-
-
-
         private readonly OwnerRepository _ownerRepo;
+        private readonly DogRepository _dogRepo;
+        private readonly WalkerRepository _walkerRepo;
+        private readonly NeighborhoodRepository _neighborhoodRepo;
 
         // The constructor accepts an IConfiguration object as a parameter. This class comes from the ASP.NET framework and is useful for retrieving things out of the appsettings.json file like connection strings.
         public OwnerController(IConfiguration config)
         {
             _ownerRepo = new OwnerRepository(config);
+            _dogRepo = new DogRepository(config);
+            _walkerRepo = new WalkerRepository(config);
+            _neighborhoodRepo = new NeighborhoodRepository(config);
         }
         // GET: OwnerController
 
@@ -39,19 +42,31 @@ namespace DogGo.Controllers
         public ActionResult Details(int id)
         {
             Owner owner = _ownerRepo.GetOwnerById(id);
+            List<Dog> dogs = _dogRepo.GetDogsByOwnerId(owner.Id);
+            List<Walker> walkers = _walkerRepo.GetWalkersInNeighborhood(owner.NeighborhoodId);
 
-            if (owner == null)
+            ProfileViewModel vm = new ProfileViewModel()
             {
-                return NotFound();
-            }
+                Owner = owner,
+                Dogs = dogs,
+                Walkers = walkers
+            };
 
-            return View(owner);
+            return View(vm);
         }
 
-        // GET: OwnerController1/Create
+        // GET: Owners/Create
         public ActionResult Create()
         {
-            return View();
+            List<Neighborhood> neighborhoods = _neighborhoodRepo.GetAll();
+
+            OwnerFormViewModel vm = new OwnerFormViewModel()
+            {
+                Owner = new Owner(),
+                Neighborhoods = neighborhoods
+            };
+
+            return View(vm);
         }
 
         // POST: OwnerController1/Create
